@@ -1,0 +1,4 @@
+.env/
+checkout_bot/logs/
+checkout_bot/checkout_bot/settings_local.py
+*.pyc
