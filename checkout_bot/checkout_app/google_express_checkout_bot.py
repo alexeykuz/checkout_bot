@@ -29,15 +29,18 @@ class GoogleExpressCheckoutBot(object):
         'ei=v1InWZDxHtKwigOy64PIDw&ved=0EOEqCA8'
 
     product_order = None
-
+    user_address_changed = False
     user_is_authenticated = False
 
     def __init__(self, order_id=None, *args, **kwargs):
-        os.environ["DISPLAY"] = ":1085"
+        capability = webdriver.ChromeOptions()
+        capability = capability.to_capabilities()
 
         self.browser = webdriver.Chrome(
             executable_path=settings.DRIVER_PATH,
-            service_args=["--verbose", "--log-path=/tmp/chrome.log"])
+            desired_capabilities=capability,
+            service_log_path='/tmp/chrome.log'
+        )
         self.browser.set_window_size(1024, 768)
 
         try:
@@ -243,6 +246,11 @@ class GoogleExpressCheckoutBot(object):
             address.clear()
             address.send_keys(self.product_order.buyer_address)
 
+        def send_address2():
+            address = self.browser.find_element_by_id('addressInput2')
+            address.clear()
+            address.send_keys(self.product_order.buyer_address2)
+
         def send_city():
             city = self.browser.find_element_by_name('city')
             city.clear()
@@ -301,7 +309,9 @@ class GoogleExpressCheckoutBot(object):
             wait_change_address_popup_load()
             edit_address_link = self.browser.find_element_by_xpath(xpath)
             edit_address_link.click()
+            self.user_address_changed = True
         except Exception as e:
+            logger.info('Address not changed for specified user')
             logger.error(e)
 
     def _add_order(self):
@@ -309,7 +319,8 @@ class GoogleExpressCheckoutBot(object):
 
         goods_sold_out = self._check_goods_sold_out()
 
-        if self.user_is_authenticated and not goods_sold_out:
+        if self.user_is_authenticated and self.user_address_changed \
+                and not goods_sold_out:
             self._add_goods_to_cart()
             self._go_to_shopping_cart_and_checkout()
             self._press_on_place_order_button()

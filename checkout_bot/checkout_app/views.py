@@ -1,19 +1,19 @@
 # -*- coding: UTF-8 -*-
-from openpyxl import load_workbook, Workbook
-from openpyxl.writer.excel import save_virtual_workbook
 from io import BytesIO
-import csv
 
-from django.http import HttpResponse, HttpResponseRedirect
-from django.views.generic.base import View
-from django.views.generic.edit import FormView
-from django.views.generic import ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth import logout
 from django.contrib.auth.forms import AuthenticationForm
-from django.contrib import messages
-from django.conf import settings
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponse, HttpResponseRedirect
+from django.views.generic import ListView
+from django.views.generic.base import View
+from django.views.generic.edit import FormView
+
+from openpyxl import Workbook, load_workbook
+from openpyxl.writer.excel import save_virtual_workbook
 
 from checkout_app.models import OrdersFileList, ProductOrder
 from checkout_app.tasks import add_processing_of_product
@@ -82,9 +82,10 @@ def upload_file_with_products(request):
                 product_name=row[1].value,
                 product_buyer=row[3].value,
                 buyer_address=row[4].value,
-                buyer_city=row[5].value,
-                buyer_state_code=row[6].value,
-                buyer_postal_code=row[7].value,
+                buyer_address2=row[5].value,
+                buyer_city=row[6].value,
+                buyer_state_code=row[7].value,
+                buyer_postal_code=row[8].value,
                 orders_file=orders_file_list)
             order.save()
             add_processing_of_product.delay(order.id)
@@ -118,6 +119,8 @@ def get_orders_in_xlsx(request, pk):
             'utf-8').replace(';', '.') if row.product_buyer else None
         buyer_address = row.buyer_address.encode(
             'utf-8').replace(';', '.') if row.buyer_address else None
+        buyer_address2 = row.buyer_address.encode(
+            'utf-8').replace(';', '.') if row.buyer_address2 else None
         buyer_city = row.buyer_city.encode(
             'utf-8').replace(';', '.') if row.buyer_city else None
         buyer_state_code = row.buyer_state_code.encode(
@@ -127,7 +130,8 @@ def get_orders_in_xlsx(request, pk):
         status = row.get_status_display()
         worksheet.append([
             product_url, product_name, product_buyer, buyer_address,
-            buyer_city, buyer_state_code, buyer_postal_code, status])
+            buyer_address2, buyer_city, buyer_state_code, buyer_postal_code,
+            status])
 
     workbook.save(response)
 

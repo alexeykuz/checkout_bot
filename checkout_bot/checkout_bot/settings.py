@@ -131,7 +131,7 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
 )
 
-TIMEOUT_PAGE_LAODING = 20
+TIMEOUT_PAGE_LAODING = 30
 
 LOG_FILE_PATH = os.path.join(LOGS_DIR, 'google_express_parser.log')
 LOG_FILE_MAX_BYTES = 1024 * 1024 * 10  # 10mb
