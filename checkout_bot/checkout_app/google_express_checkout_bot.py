@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
-import time
 import logging
-
-from selenium import webdriver
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
+import os
+import time
 
 from django.conf import settings
 
-from checkout_app.models import ProductOrder, STATE_IN_PROCESS, \
-    STATE_SOLD_OUT, STATE_SUCCESS_FINISHED, STATE_ERROR
+from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
+from checkout_app.models import ProductOrder, STATE_ERROR, \
+    STATE_IN_PROCESS, STATE_SOLD_OUT, STATE_SUCCESS_FINISHED
 
 logger = logging.getLogger('google_express_logger')
 
@@ -32,8 +33,11 @@ class GoogleExpressCheckoutBot(object):
     user_is_authenticated = False
 
     def __init__(self, order_id=None, *args, **kwargs):
+        os.environ["DISPLAY"] = ":1085"
+
         self.browser = webdriver.Chrome(
-            executable_path=settings.DRIVER_PATH)
+            executable_path=settings.DRIVER_PATH,
+            service_args=["--verbose", "--log-path=/tmp/chrome.log"])
         self.browser.set_window_size(1024, 768)
 
         try:
@@ -95,8 +99,8 @@ class GoogleExpressCheckoutBot(object):
 
         try:
             wait_accounts_page_load()
-            identifierLink = self.browser.find_element_by_id('identifierLink')
-            identifierLink.click()
+            identifier_link = self.browser.find_element_by_id('identifierLink')
+            identifier_link.click()
         except Exception as e:
             logger.error(e)
 
