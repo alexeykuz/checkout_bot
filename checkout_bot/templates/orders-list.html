@@ -14,6 +14,8 @@
             <th>ID</th>
             <th>Product url</th>
             <th>Product name</th>
+            <th>Products count</th>
+            <th>Products available</th>
             <th>Buyer</th>
             <th>Address</th>
             <th>Address2</th>
@@ -21,7 +23,7 @@
             <th>State</th>
             <th>Postal code</th>
             <th>Date created</th>
-            <th>Date added</th>
+            <th>Date started</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -30,6 +32,8 @@
               <td>{{ order.id }}</td>
               <td>{{ order.product_url }}</td>
               <td>{{ order.product_name }}</td>
+              <td>{{ order.products_count }}</td>
+              <td>{{ order.products_available }}</td>
               <td>{{ order.product_buyer }}</td>
               <td>{{ order.buyer_address }}</td>
               <td>{{ order.buyer_address2 }}</td>
@@ -37,7 +41,7 @@
               <td>{{ order.buyer_state_code }}</td>
               <td>{{ order.buyer_postal_code }}</td>
               <td>{{ order.date_created }}</td>
-              <td>{{ order.date_added }}</td>
+              <td>{{ order.date_started }}</td>
               <td>{{ order.get_status_display }}</td>
             </tr>
           {% endfor %}

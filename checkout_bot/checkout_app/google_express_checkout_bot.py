@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
-import os
 import time
+import datetime
 
 from django.conf import settings
 
@@ -11,28 +11,26 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from checkout_app.models import ProductOrder, STATE_ERROR, \
-    STATE_IN_PROCESS, STATE_SOLD_OUT, STATE_SUCCESS_FINISHED
+from checkout_app.models import GoogleExpressUser, ProductOrder, \
+    STATE_ERROR, STATE_IN_PROCESS, STATE_SOLD_OUT, STATE_SUCCESS_FINISHED
 
 logger = logging.getLogger('google_express_logger')
 
 
 class GoogleExpressCheckoutBot(object):
     accounts_url = 'https://accounts.google.com'
-    email = 'alex@halevienterprises.com'
-    password = 'nochum12'
+    google_express_user = None
 
     cart_url = 'https://www.google.com/express/cart'
     google_express_url = 'https://www.google.com/express/'
-    goods_url = 'https://www.google.com/express/u/0/product/' \
-        '9182472493455614380_10269187404013219762_9090995?' \
-        'ei=v1InWZDxHtKwigOy64PIDw&ved=0EOEqCA8'
 
     product_order = None
     user_address_changed = False
     user_is_authenticated = False
 
     def __init__(self, order_id=None, *args, **kwargs):
+        self.google_express_user = GoogleExpressUser.objects.all()[0]
+
         capability = webdriver.ChromeOptions()
         capability = capability.to_capabilities()
 
@@ -46,6 +44,7 @@ class GoogleExpressCheckoutBot(object):
         try:
             self.product_order = ProductOrder.objects.get(pk=order_id)
             self.product_order.status = STATE_IN_PROCESS
+            self.product_order.date_started = datetime.datetime.now()
             self.product_order.save()
             logger.warn('Product order ID: ' + str(self.product_order.id))
         except ProductOrder.DoesNotExist as e:
@@ -87,7 +86,7 @@ class GoogleExpressCheckoutBot(object):
                 wait_sign_in_page_load()
 
             email = self.browser.find_element_by_id('identifierId')
-            email.send_keys(self.email)
+            email.send_keys(self.google_express_user.email)
             button_next = self.browser.find_element_by_id('identifierNext')
             button_next.click()
         except Exception as e:
@@ -117,7 +116,7 @@ class GoogleExpressCheckoutBot(object):
         try:
             wait_password_page_load()
             password = self.browser.find_element_by_name('password')
-            password.send_keys(self.password)
+            password.send_keys(self.google_express_user.password)
             button_next = self.browser.find_element_by_id('passwordNext')
             button_next.click()
         except Exception as e:
@@ -315,16 +314,18 @@ class GoogleExpressCheckoutBot(object):
             logger.error(e)
 
     def _add_order(self):
-        self.browser.get(self.goods_url)
+        self.browser.get(self.product_order.product_url)
 
         goods_sold_out = self._check_goods_sold_out()
 
         if self.user_is_authenticated and self.user_address_changed \
                 and not goods_sold_out:
+            available_goods_count = self._get_available_goods_count()
+            self._set_count_of_goods(available_goods_count)
             self._add_goods_to_cart()
             self._go_to_shopping_cart_and_checkout()
-            self._press_on_place_order_button()
-            self._is_order_confirmation_container()
+            # self._press_on_place_order_button()
+            # self._is_order_confirmation_container()
 
     def _check_goods_sold_out(self):
         exc_msg = 'Timed out waiting for Sold out text load'
@@ -344,6 +345,48 @@ class GoogleExpressCheckoutBot(object):
         except Exception as e:
             logger.error(e)
             return False
+
+    def _get_available_goods_count(self):
+        xpath = '//div[contains(@class, "md-active")]/' \
+            'md-select-menu/md-content/md-option[last()]'
+
+        def wait_count_popup_load():
+            self._selenium_element_load_waiting(
+                By.XPATH, xpath, success_msg='Goods count popup loaded',
+                timeout_exception_msg='Timed out goods count popup load')
+
+        try:
+            count_field = self.browser.find_element_by_xpath(
+                '//md-select[contains(@ng-model, "quantity")]')
+            count_field.click()
+            wait_count_popup_load()
+            goods_count = self.browser.find_element_by_xpath(xpath)
+            goods_count = goods_count.get_attribute("value")
+            logger.info('Available goods count:' + goods_count)
+        except Exception as e:
+            logger.error(e)
+            return None
+
+        return goods_count
+
+    def _set_count_of_goods(self, available_count):
+        if available_count.isdigit() and \
+                self.product_order.products_count <= int(available_count):
+            establish_count = self.product_order.products_count
+        else:
+            establish_count = available_count
+
+        def chose_count():
+            xpath = '//md-option[@value="' + str(establish_count) + '"]'
+            count_option = self.browser.find_element_by_xpath(xpath)
+            count_option.click()
+
+        try:
+            chose_count()
+            self.product_order.products_available = establish_count
+            self.product_order.save()
+        except Exception as e:
+            logger.error(e)
 
     def _add_goods_to_cart(self):
         def wait_add_to_cart_button_load():

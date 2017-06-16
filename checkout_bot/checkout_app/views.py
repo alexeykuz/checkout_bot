@@ -80,6 +80,7 @@ def upload_file_with_products(request):
             order = ProductOrder(
                 product_url=row[0].value,
                 product_name=row[1].value,
+                products_count=row[2].value,
                 product_buyer=row[3].value,
                 buyer_address=row[4].value,
                 buyer_address2=row[5].value,
@@ -115,6 +116,7 @@ def get_orders_in_xlsx(request, pk):
             'utf-8').replace(';', '.') if row.product_url else None
         product_name = row.product_name.encode(
             'utf-8').replace(';', '.') if row.product_name else None
+        products_count = row.products_count
         product_buyer = row.product_buyer.encode(
             'utf-8').replace(';', '.') if row.product_buyer else None
         buyer_address = row.buyer_address.encode(
@@ -127,11 +129,12 @@ def get_orders_in_xlsx(request, pk):
             'utf-8').replace(';', '.') if row.buyer_state_code else None
         buyer_postal_code = row.buyer_postal_code.encode(
             'utf-8').replace(';', '.') if row.buyer_postal_code else None
+        products_available = row.products_available
         status = row.get_status_display()
         worksheet.append([
-            product_url, product_name, product_buyer, buyer_address,
-            buyer_address2, buyer_city, buyer_state_code, buyer_postal_code,
-            status])
+            product_url, product_name, products_count, product_buyer,
+            buyer_address, buyer_address2, buyer_city, buyer_state_code,
+            buyer_postal_code, products_available, status])
 
     workbook.save(response)
 

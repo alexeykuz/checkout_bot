@@ -15,7 +15,7 @@ STATE_CHOICES = (
     (STATE_IN_PROCESS, _('Handling order')),
     (STATE_SUCCESS_FINISHED, _('Order processed')),
     (STATE_ERROR, _('Order processed with errors')),
-    (STATE_SOLD_OUT, _('Product sold out')),
+    (STATE_SOLD_OUT, _('Product is sold out')),
 )
 
 
@@ -35,6 +35,10 @@ class ProductOrder(models.Model):
     product_name = models.CharField(
         default=None, null=True, blank=True,
         max_length=255, verbose_name=_('Product name'))
+    products_count = models.SmallIntegerField(
+        default=1, verbose_name=_('Count of goods'))
+    products_available = models.SmallIntegerField(
+        null=True, blank=True, verbose_name=_('Count of bought goods'))
     product_buyer = models.CharField(
         default=None, null=True, blank=True,
         max_length=120, verbose_name=_('Product buyer'))
@@ -76,3 +80,13 @@ class ProductOrder(models.Model):
 
     def __str__(self):
         return self.product_url if self.product_url else str(self.id)
+
+
+class GoogleExpressUser(models.Model):
+    email = models.CharField(
+        max_length=120, verbose_name=_('Google Express email'))
+    password = models.CharField(
+        max_length=120, verbose_name=_('Google Express password'))
+
+    def __str__(self):
+        return self.email
