@@ -324,8 +324,9 @@ class GoogleExpressCheckoutBot(object):
             self._set_count_of_goods(available_goods_count)
             self._add_goods_to_cart()
             self._go_to_shopping_cart_and_checkout()
-            # self._press_on_place_order_button()
-            # self._is_order_confirmation_container()
+            self._press_continue_buttons()
+            self._press_on_place_order_button()
+            self._is_order_confirmation_container()
 
     def _check_goods_sold_out(self):
         exc_msg = 'Timed out waiting for Sold out text load'
@@ -416,6 +417,23 @@ class GoogleExpressCheckoutBot(object):
             checkout_button = self.browser.find_element_by_class_name(
                 'checkoutButton')
             checkout_button.click()
+        except Exception as e:
+            logger.error(e)
+
+    def _press_continue_buttons(self):
+        def wait_continue_button_load():
+            self._selenium_element_load_waiting(
+                By.CLASS_NAME, 'continueButton',
+                success_msg='Continue button loaded',
+                timeout_exception_msg='Timed out waiting Continue button')
+
+        try:
+            wait_continue_button_load()
+            continue_button = self.browser.find_element_by_class_name(
+                'continueButton')
+            continue_button.click()
+
+            self._press_continue_buttons()
         except Exception as e:
             logger.error(e)
 
