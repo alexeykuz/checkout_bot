@@ -314,7 +314,8 @@ class GoogleExpressCheckoutBot(object):
             logger.error(e)
 
     def _add_order(self):
-        self.browser.get(self.product_order.product_url)
+        if self.product_order.product_url:
+            self.browser.get(self.product_order.product_url)
 
         goods_sold_out = self._check_goods_sold_out()
 
@@ -371,11 +372,14 @@ class GoogleExpressCheckoutBot(object):
         return goods_count
 
     def _set_count_of_goods(self, available_count):
-        if available_count.isdigit() and \
+        if available_count and available_count.isdigit() and \
                 self.product_order.products_count <= int(available_count):
             establish_count = self.product_order.products_count
-        else:
+        elif available_count and available_count.isdigit() and \
+                self.product_order.products_count > int(available_count):
             establish_count = available_count
+        else:
+            establish_count = 1
 
         def chose_count():
             xpath = '//md-option[@value="' + str(establish_count) + '"]'
