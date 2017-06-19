@@ -8,6 +8,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse, HttpResponseRedirect
+from django.db.models import IntegerField, Sum, Case, When
 from django.views.generic import ListView
 from django.views.generic.base import View
 from django.views.generic.edit import FormView
@@ -15,7 +16,8 @@ from django.views.generic.edit import FormView
 from openpyxl import Workbook, load_workbook
 from openpyxl.writer.excel import save_virtual_workbook
 
-from checkout_app.models import OrdersFileList, ProductOrder
+from checkout_app.models import OrdersFileList, ProductOrder, \
+    STATE_CREATED, STATE_STOPPED
 from checkout_app.tasks import add_processing_of_product
 
 
@@ -49,7 +51,15 @@ class FilesOfOrdersListView(LoginRequiredMixin, ListView):
     paginate_by = settings.ROWS_ON_PAGE
 
     def get_queryset(self):
-        qs = super(FilesOfOrdersListView, self).get_queryset().order_by('-id')
+        qs = super(
+            FilesOfOrdersListView,
+            self).get_queryset().select_related().annotate(
+                count_with_status_created=Sum(
+                    Case(
+                        When(product_orders__status=STATE_CREATED, then=1),
+                        output_field=IntegerField())
+                )
+        ).order_by('-id')
         return qs
 
 
@@ -90,6 +100,19 @@ def upload_file_with_products(request):
                 orders_file=orders_file_list)
             order.save()
             add_processing_of_product.delay(order.id)
+
+    return HttpResponseRedirect('/')
+
+
+def stop_not_processed_tasks(request, file_id=None):
+    if file_id:
+        product_order_list = ProductOrder.objects.filter(
+            orders_file_id=file_id,
+            status__in=[STATE_CREATED])
+        for product_order in product_order_list:
+            product_order.status = STATE_STOPPED
+            product_order.save()
+        messages.success(request, 'Not processed tasks are stopped')
 
     return HttpResponseRedirect('/')
 

@@ -12,7 +12,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from checkout_app.models import GoogleExpressUser, ProductOrder, \
-    STATE_ERROR, STATE_IN_PROCESS, STATE_SOLD_OUT, STATE_SUCCESS_FINISHED
+    STATE_ERROR, STATE_IN_PROCESS, STATE_SOLD_OUT, STATE_SUCCESS_FINISHED, \
+    STATE_STOPPED
 
 logger = logging.getLogger('google_express_logger')
 
@@ -43,7 +44,8 @@ class GoogleExpressCheckoutBot(object):
 
         try:
             self.product_order = ProductOrder.objects.get(pk=order_id)
-            self.product_order.status = STATE_IN_PROCESS
+            if not self.product_order.status == STATE_STOPPED:
+                self.product_order.status = STATE_IN_PROCESS
             self.product_order.date_started = datetime.datetime.now()
             self.product_order.save()
             logger.warn('Product order ID: ' + str(self.product_order.id))
@@ -53,7 +55,8 @@ class GoogleExpressCheckoutBot(object):
     def place_an_order(self):
         """Make order for specified goods
         """
-        if self.product_order:
+        if self.product_order and \
+                not self.product_order.status == STATE_STOPPED:
             self._make_login()
             self._clean_cart_list()
             self._set_delivery_address()

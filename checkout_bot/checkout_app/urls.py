@@ -12,4 +12,6 @@ urlpatterns = [
         views.upload_file_with_products, name='upload_file'),
     url(r'^get-orders/(?P<pk>[0-9]+)/$',
         views.get_orders_in_xlsx, name='get-orders'),
+    url(r'^stop-file-tasks/(?P<file_id>[0-9]+)/$',
+        views.stop_not_processed_tasks, name='stop-file-tasks'),
 ]

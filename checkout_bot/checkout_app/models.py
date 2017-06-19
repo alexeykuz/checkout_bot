@@ -9,6 +9,7 @@ STATE_IN_PROCESS = 2
 STATE_SUCCESS_FINISHED = 3
 STATE_ERROR = 4
 STATE_SOLD_OUT = 5
+STATE_STOPPED = 6
 
 STATE_CHOICES = (
     (STATE_CREATED, _('Product order created')),
@@ -16,6 +17,7 @@ STATE_CHOICES = (
     (STATE_SUCCESS_FINISHED, _('Order processed')),
     (STATE_ERROR, _('Order processed with errors')),
     (STATE_SOLD_OUT, _('Product is sold out')),
+    (STATE_STOPPED, _('Product order is stopped')),
 )
 
 
@@ -64,7 +66,7 @@ class ProductOrder(models.Model):
     date_started = models.DateTimeField(
         blank=True, null=True, verbose_name=_('Date started'))
     orders_file = models.ForeignKey(
-        'OrdersFileList', null=True, blank=True,
+        'OrdersFileList', null=True, blank=True, related_name="product_orders",
         verbose_name=_('Orders file list instance'))
 
     def as_dict(self):

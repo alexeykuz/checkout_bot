@@ -27,6 +27,7 @@
             <th>File name</th>
             <th>Link to orders list</th>
             <th>Save to CSV</th>
+            <th>Stop not processed tasks</th>
           </tr>
         </thead>
         {% for result in results %}
@@ -35,6 +36,7 @@
             <td>{% if result.file_name %}{{ result.file_name }}{% endif %}</td>
             <td><a title="Search details" target="_blank" class="center" href="{% url 'checkoutapp:orders-list' result.id %}"><img width=25 src="{% static 'img/details.png' %}" /></a></td>
             <td><a title="Save to CSV" class="center" href="{% url 'checkoutapp:get-orders' result.id %}"><img width=25 src="{% static 'img/save.png' %}" /></a></td>
+            <td {% if result.count_with_status_created %}class="center"{% endif %}>{% if result.count_with_status_created %}<a class="btn btn-info el-width-110" href="{% url 'checkoutapp:stop-file-tasks' result.id %}">Stop</a>{% endif %}</td>
           </tr>
         {% endfor %}
       </table>
