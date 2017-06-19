@@ -12,10 +12,10 @@ STATE_SOLD_OUT = 5
 STATE_STOPPED = 6
 
 STATE_CHOICES = (
-    (STATE_CREATED, _('Product order created')),
+    (STATE_CREATED, _('Product order is created')),
     (STATE_IN_PROCESS, _('Handling order')),
-    (STATE_SUCCESS_FINISHED, _('Order processed')),
-    (STATE_ERROR, _('Order processed with errors')),
+    (STATE_SUCCESS_FINISHED, _('Order is processed')),
+    (STATE_ERROR, _('Order is processed with errors')),
     (STATE_SOLD_OUT, _('Product is sold out')),
     (STATE_STOPPED, _('Product order is stopped')),
 )
