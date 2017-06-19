@@ -259,8 +259,11 @@ class GoogleExpressCheckoutBot(object):
             city.send_keys(self.product_order.buyer_city)
 
         def send_state():
-            xpath = '//md-option[@value="' + \
-                self.product_order.buyer_state_code + '"]'
+            buyer_state_code = self.product_order.buyer_state_code
+            if buyer_state_code:
+                buyer_state_code = buyer_state_code.upper()
+
+            xpath = '//md-option[@value="' + buyer_state_code + '"]'
 
             def wait_state_popup_load():
                 excp_msg = 'Timed out waiting for state popup load'
