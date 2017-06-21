@@ -66,6 +66,8 @@
             <a href="{% url 'checkoutapp:orders-list' orders.first.orders_file.id %}?page={{ page_obj.next_page_number }}"><img class="el-width-25" src="{% static 'img/next.png' %}"></a>
           {% endif %}
         </span>
+        <input id="page_numb" type="text" placeholder="Page number" />
+        <a class="goto_page_numb btn btn-info el-width-110" href="{% url 'checkoutapp:orders-list' orders.first.orders_file.id %}">Goto</a>
       </div>
     {% endif %}
   </div>
