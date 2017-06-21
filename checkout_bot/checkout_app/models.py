@@ -31,6 +31,9 @@ class OrdersFileList(models.Model):
 
 
 class ProductOrder(models.Model):
+    id_in_file = models.IntegerField(
+        default=None, null=True, blank=True,
+        verbose_name=_('Id of order in file'))
     product_url = models.CharField(
         default=None, null=True, blank=True,
         max_length=255, verbose_name=_('Product url'))

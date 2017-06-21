@@ -12,6 +12,7 @@
         <thead>
           <tr>
             <th>ID</th>
+            <th>ID in file</th>
             <th>Product url</th>
             <th>Product name</th>
             <th>Products count</th>
@@ -30,6 +31,7 @@
           {% for order in orders %}
             <tr>
               <td>{{ order.id }}</td>
+              <td>{{ order.id_in_file }}</td>
               <td>{{ order.product_url }}</td>
               <td>{{ order.product_name }}</td>
               <td>{{ order.products_count }}</td>

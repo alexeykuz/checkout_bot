@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
 from io import BytesIO
+import csv
 
 from django.conf import settings
 from django.contrib import messages
@@ -13,8 +14,7 @@ from django.views.generic import ListView
 from django.views.generic.base import View
 from django.views.generic.edit import FormView
 
-from openpyxl import Workbook, load_workbook
-from openpyxl.writer.excel import save_virtual_workbook
+from openpyxl import load_workbook
 
 from checkout_app.models import OrdersFileList, ProductOrder, \
     STATE_CREATED, STATE_STOPPED
@@ -71,7 +71,7 @@ class OrdersListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return ProductOrder.objects.filter(
-            orders_file_id=self.kwargs['pk']).order_by('-date_created')
+            orders_file_id=self.kwargs['pk']).order_by('id')
 
 
 def upload_file_with_products(request):
@@ -123,17 +123,13 @@ def get_orders_in_xlsx(request, pk):
     except Exception:
         return HttpResponse('File do not exists')
 
-    workbook = Workbook()
-    worksheet = workbook.active
-
-    mimetype = 'application/' \
-        'vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    response = HttpResponse(
-        content=save_virtual_workbook(workbook), content_type=mimetype)
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
     response['Content-Disposition'] = \
-        'attachment; filename="%s_employees.xlsx"' % fl.file_name
+        'attachment; filename="%s_employees.csv"' % fl.file_name
 
     qs = ProductOrder.objects.filter(orders_file_id=fl.id).order_by('id')
+
+    writer = csv.writer(response, delimiter=';')
     for row in qs:
         product_url = row.product_url.encode(
             'utf-8').replace(';', '.') if row.product_url else None
@@ -154,11 +150,9 @@ def get_orders_in_xlsx(request, pk):
             'utf-8').replace(';', '.') if row.buyer_postal_code else None
         products_available = row.products_available
         status = row.get_status_display()
-        worksheet.append([
+        writer.writerow([
             product_url, product_name, products_count, product_buyer,
             buyer_address, buyer_address2, buyer_city, buyer_state_code,
             buyer_postal_code, products_available, status])
-
-    workbook.save(response)
 
     return response
