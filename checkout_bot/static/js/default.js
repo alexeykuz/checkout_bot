@@ -11,6 +11,6 @@ $(document).ready(function(){
   $('.goto_page_numb').on('click', function(e){
     e.preventDefault();
     var url = $(this).attr('href') + '?page=' + $('#page_numb').val();
-    window.location.href = url;
+    window.location.replace(url);
   });
 });
