@@ -42,6 +42,8 @@ class GoogleExpressCheckoutBot(object):
         )
         self.browser.set_window_size(1024, 768)
 
+        self.browser_pid = self.browser.service.process.pid
+
         try:
             self.product_order = ProductOrder.objects.get(pk=order_id)
             if not self.product_order.status == STATE_STOPPED:
