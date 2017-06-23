@@ -17,9 +17,8 @@ def add_processing_of_product(order_id):
         logger.info("Process ID:" + str(bot.browser_pid))
         bot.place_an_order()
     except SoftTimeLimitExceeded as e:
-        logger.info("---Process ID:" + str(bot.browser_pid))
-        logger.error('SoftTimeLimitExceeded:' + e)
         try:
             os.kill(bot.browser_pid, signal.SIGKILL)
         except Exception as e:
-            logger.error("Can't kill browser process:" + e)
+            logger.error("Can't kill browser process:")
+            logger.error(e)

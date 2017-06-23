@@ -2,6 +2,7 @@
 import logging
 import time
 import datetime
+import psutil
 
 from django.conf import settings
 
@@ -10,6 +11,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from celery.exceptions import SoftTimeLimitExceeded
 
 from checkout_app.models import GoogleExpressUser, ProductOrder, \
     STATE_ERROR, STATE_IN_PROCESS, STATE_SOLD_OUT, STATE_SUCCESS_FINISHED, \
@@ -42,7 +44,9 @@ class GoogleExpressCheckoutBot(object):
         )
         self.browser.set_window_size(1024, 768)
 
-        self.browser_pid = self.browser.service.process.pid
+        process_pid = self.browser.service.process.pid
+        p = psutil.Process(process_pid)
+        self.browser_pid = p.children()[0].pid
 
         try:
             self.product_order = ProductOrder.objects.get(pk=order_id)
@@ -133,12 +137,12 @@ class GoogleExpressCheckoutBot(object):
             By.CLASS_NAME, 'gbii',
             success_msg='User authenticated',
             timeout_exception_msg=exception_msg)
-
         if elem_exists:
             self.user_is_authenticated = True
 
     def _clean_cart_list(self):
         while True:
+            logger.error("/time sleep")
             time.sleep(10)
             self.browser.get(self.cart_url)
             self._remove_item_from_cart()
@@ -509,6 +513,8 @@ class GoogleExpressCheckoutBot(object):
         except TimeoutException:
             logger.error(timeout_exception_msg)
             return False
+        except SoftTimeLimitExceeded as e:
+            raise e
         except Exception as e:
             logger.error(e)
             return False
