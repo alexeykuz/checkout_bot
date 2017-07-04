@@ -8,9 +8,14 @@ jdcal==1.3
 kombu==4.0.2
 openpyxl==2.4.8
 packaging==16.8
+pkg-resources==0.0.0
+psutil==5.2.2
 psycopg2==2.7.1
+pudb==2017.1.2
+Pygments==2.2.0
 pyparsing==2.2.0
 pytz==2017.2
 selenium==3.3.1
 six==1.10.0
+urwid==1.3.1
 vine==1.1.3

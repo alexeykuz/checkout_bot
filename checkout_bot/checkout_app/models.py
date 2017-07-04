@@ -71,6 +71,12 @@ class ProductOrder(models.Model):
     orders_file = models.ForeignKey(
         'OrdersFileList', null=True, blank=True, related_name="product_orders",
         verbose_name=_('Orders file list instance'))
+    express_order_id = models.CharField(
+        default=None, null=True, blank=True,
+        max_length=120, verbose_name=_('Google express order id'))
+    delivery_time = models.CharField(
+        default=None, null=True, blank=True,
+        max_length=120, verbose_name=_('Delivery time'))
 
     def as_dict(self):
         return {

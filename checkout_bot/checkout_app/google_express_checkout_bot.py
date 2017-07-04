@@ -482,12 +482,30 @@ class GoogleExpressCheckoutBot(object):
             order_confirmation = self.browser.find_element_by_class_name(
                 'orderConfirmationContainer')
             if order_confirmation:
+                self._set_google_express_order_id()
+                self._set_delivery_time()
                 self.product_order.status = STATE_SUCCESS_FINISHED
         except Exception as e:
             logger.error(e)
             self.product_order.status = STATE_ERROR
 
         self.product_order.save()
+
+    def _set_google_express_order_id(self):
+        try:
+            order_id = self.browser.find_element_by_class_name(
+                'orderId').text
+            self.product_order.express_order_id = order_id
+        except Exception as e:
+            logger.error(e)
+
+    def _set_delivery_time(self):
+        try:
+            delivery_time = self.browser.find_element_by_class_name(
+                'deliveryTime').text
+            self.product_order.delivery_time = delivery_time
+        except Exception as e:
+            logger.error(e)
 
     def _close_selenium_browser(self):
         try:

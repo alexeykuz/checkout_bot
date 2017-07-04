@@ -86,8 +86,9 @@ def upload_file_with_products(request):
         file_in_memory = request.FILES['orders_list'].read()
         wb = load_workbook(filename=BytesIO(file_in_memory))
         ws = wb.active
-        for row in ws.rows:
+        for i, row in enumerate(ws.rows):
             order = ProductOrder(
+                id_in_file=i + 1,
                 product_url=row[0].value,
                 product_name=row[1].value,
                 products_count=row[2].value,
@@ -140,7 +141,7 @@ def get_orders_in_xlsx(request, pk):
             'utf-8').replace(';', '.') if row.product_buyer else None
         buyer_address = row.buyer_address.encode(
             'utf-8').replace(';', '.') if row.buyer_address else None
-        buyer_address2 = row.buyer_address.encode(
+        buyer_address2 = row.buyer_address2.encode(
             'utf-8').replace(';', '.') if row.buyer_address2 else None
         buyer_city = row.buyer_city.encode(
             'utf-8').replace(';', '.') if row.buyer_city else None
@@ -148,11 +149,16 @@ def get_orders_in_xlsx(request, pk):
             'utf-8').replace(';', '.') if row.buyer_state_code else None
         buyer_postal_code = row.buyer_postal_code.encode(
             'utf-8').replace(';', '.') if row.buyer_postal_code else None
+        express_order_id = row.express_order_id.encode(
+            'utf-8').replace(';', '.') if row.express_order_id else None
+        delivery_time = row.delivery_time.encode(
+            'utf-8').replace(';', '.') if row.delivery_time else None
         products_available = row.products_available
         status = row.get_status_display()
         writer.writerow([
-            product_url, product_name, products_count, product_buyer,
-            buyer_address, buyer_address2, buyer_city, buyer_state_code,
-            buyer_postal_code, products_available, status])
+            row.id_in_file, product_url, product_name, products_count,
+            product_buyer, buyer_address, buyer_address2, buyer_city,
+            buyer_state_code, buyer_postal_code, products_available,
+            express_order_id, delivery_time, status])
 
     return response

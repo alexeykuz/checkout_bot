@@ -25,6 +25,8 @@
             <th>Postal code</th>
             <th>Date created</th>
             <th>Date started</th>
+            <th>Express order ID</th>
+            <th>Delivery time</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -44,6 +46,8 @@
               <td>{{ order.buyer_postal_code }}</td>
               <td>{{ order.date_created }}</td>
               <td>{{ order.date_started }}</td>
+              <td>{{ order.express_order_id }}</td>
+              <td>{{ order.delivery_time }}</td>
               <td>{{ order.get_status_display }}</td>
             </tr>
           {% endfor %}
