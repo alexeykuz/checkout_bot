@@ -15,7 +15,7 @@ from celery.exceptions import SoftTimeLimitExceeded
 
 from checkout_app.models import GoogleExpressUser, ProductOrder, \
     STATE_ERROR, STATE_IN_PROCESS, STATE_SOLD_OUT, STATE_SUCCESS_FINISHED, \
-    STATE_STOPPED
+    STATE_STOPPED, STATE_ADDRESS_NOT_VALID
 
 logger = logging.getLogger('google_express_logger')
 
@@ -322,6 +322,8 @@ class GoogleExpressCheckoutBot(object):
             edit_address_link.click()
             self.user_address_changed = True
         except Exception as e:
+            self.product_order.status = STATE_ADDRESS_NOT_VALID
+            self.product_order.save()
             logger.info('Address not changed for specified user')
             logger.error(e)
 

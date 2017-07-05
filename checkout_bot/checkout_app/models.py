@@ -10,6 +10,7 @@ STATE_SUCCESS_FINISHED = 3
 STATE_ERROR = 4
 STATE_SOLD_OUT = 5
 STATE_STOPPED = 6
+STATE_ADDRESS_NOT_VALID = 7
 
 STATE_CHOICES = (
     (STATE_CREATED, _('Product order is created')),
@@ -18,6 +19,7 @@ STATE_CHOICES = (
     (STATE_ERROR, _('Order is processed with errors')),
     (STATE_SOLD_OUT, _('Product is sold out')),
     (STATE_STOPPED, _('Product order is stopped')),
+    (STATE_ADDRESS_NOT_VALID, _('Address is not valid')),
 )
 
 
