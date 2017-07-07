@@ -142,7 +142,6 @@ class GoogleExpressCheckoutBot(object):
 
     def _clean_cart_list(self):
         while True:
-            logger.error("/time sleep")
             time.sleep(10)
             self.browser.get(self.cart_url)
             self._remove_item_from_cart()
@@ -248,6 +247,11 @@ class GoogleExpressCheckoutBot(object):
             recipient_order_name.clear()
             recipient_order_name.send_keys(self.product_order.product_buyer)
 
+        def send_phone():
+            phone_number = self.browser.find_element_by_name('phoneNumber')
+            phone_number.clear()
+            phone_number.send_keys(self.product_order.buyer_phone_number)
+
         def send_address():
             address = self.browser.find_element_by_xpath(
                 '//input[@name="address"]')
@@ -295,6 +299,7 @@ class GoogleExpressCheckoutBot(object):
         try:
             wait_edit_address_popup_load()
             send_recipient_order_name()
+            send_phone()
             send_address()
             send_city()
             send_postal_code()

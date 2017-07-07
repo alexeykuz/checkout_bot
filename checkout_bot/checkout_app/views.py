@@ -84,7 +84,7 @@ def upload_file_with_products(request):
             orders_file_list.save()
 
         file_in_memory = request.FILES['orders_list'].read()
-        wb = load_workbook(filename=BytesIO(file_in_memory))
+        wb = load_workbook(filename=BytesIO(file_in_memory), data_only=True)
         ws = wb.active
         for i, row in enumerate(ws.rows):
             order = ProductOrder(
@@ -98,6 +98,7 @@ def upload_file_with_products(request):
                 buyer_city=row[6].value,
                 buyer_state_code=row[7].value,
                 buyer_postal_code=row[8].value,
+                buyer_phone_number=row[9].value,
                 orders_file=orders_file_list)
             order.save()
             add_processing_of_product.delay(order.id)
@@ -149,6 +150,10 @@ def get_orders_in_xlsx(request, pk):
             'utf-8').replace(';', '.') if row.buyer_state_code else None
         buyer_postal_code = row.buyer_postal_code.encode(
             'utf-8').replace(';', '.') if row.buyer_postal_code else None
+        buyer_postal_code = row.buyer_postal_code.encode(
+            'utf-8').replace(';', '.') if row.buyer_postal_code else None
+        buyer_phone_number = row.buyer_phone_number.encode(
+            'utf-8').replace(';', '.') if row.buyer_phone_number else None
         express_order_id = row.express_order_id.encode(
             'utf-8').replace(';', '.') if row.express_order_id else None
         delivery_time = row.delivery_time.encode(
@@ -158,7 +163,7 @@ def get_orders_in_xlsx(request, pk):
         writer.writerow([
             row.id_in_file, product_url, product_name, products_count,
             product_buyer, buyer_address, buyer_address2, buyer_city,
-            buyer_state_code, buyer_postal_code, products_available,
-            express_order_id, delivery_time, status])
+            buyer_state_code, buyer_postal_code, buyer_phone_number,
+            products_available, express_order_id, delivery_time, status])
 
     return response

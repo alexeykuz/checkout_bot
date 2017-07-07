@@ -49,6 +49,9 @@ class ProductOrder(models.Model):
     product_buyer = models.CharField(
         default=None, null=True, blank=True,
         max_length=120, verbose_name=_('Product buyer'))
+    buyer_phone_number = models.CharField(
+        default=None, null=True, blank=True,
+        max_length=120, verbose_name=_('Buyer phone number'))
     buyer_address = models.CharField(
         default=None, null=True, blank=True,
         max_length=255, verbose_name=_('Buyer address'))
