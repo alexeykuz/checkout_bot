@@ -16,6 +16,7 @@ from celery.exceptions import SoftTimeLimitExceeded
 from checkout_app.models import GoogleExpressUser, ProductOrder, \
     STATE_ERROR, STATE_IN_PROCESS, STATE_SOLD_OUT, STATE_SUCCESS_FINISHED, \
     STATE_STOPPED, STATE_ADDRESS_NOT_VALID
+from checkout_app.const import STATE_MAP, QUANTITY_MAP
 
 logger = logging.getLogger('google_express_logger')
 
@@ -35,6 +36,7 @@ class GoogleExpressCheckoutBot(object):
         self.google_express_user = GoogleExpressUser.objects.all()[0]
 
         capability = webdriver.ChromeOptions()
+        capability.add_argument('--auto-open-devtools-for-tabs')
         capability = capability.to_capabilities()
 
         self.browser = webdriver.Chrome(
@@ -181,6 +183,10 @@ class GoogleExpressCheckoutBot(object):
         self._open_address_dropdown_menu()
         self._open_address_popup()
         self._press_edit_address_link()
+        
+        self._open_modal_adress_window()
+        self._press_change_address()
+
         self._update_address()
         self._select_first_from_address_list()
 
@@ -196,6 +202,37 @@ class GoogleExpressCheckoutBot(object):
             wait_dropdown_menu_load()
             show_popup_button = self.browser.find_element_by_class_name(
                 'addressDeliverToZipLabel')
+            show_popup_button.click()
+        except Exception as e:
+            logger.error(e)
+    
+    def _open_modal_adress_window(self):
+        selector = "button[_ngcontent-c2] ~ button[_ngcontent-c2]:not(:last-of-type)"
+        def wait_model_window():
+            excp_msg = 'Timed out waiting for modal window'
+            self._selenium_element_load_waiting(
+                By.CSS_SELECTOR, selector,
+                success_msg='Modal window loaded',
+                timeout_exception_msg=excp_msg)
+        try:
+            wait_model_window()
+            show_popup_button = self.browser.find_element_by_css_selector(selector)
+            show_popup_button.click()
+        except Exception as e:
+            logger.error(e)
+
+    def _press_change_address(self):
+        def wait_address_change_load():
+            excp_msg = 'Timed out waiting for change address button load'
+            self._selenium_element_load_waiting(
+                By.CLASS_NAME, 'editAddressButton',
+                success_msg='Change address button loaded',
+                timeout_exception_msg=excp_msg)
+
+        try:
+            wait_address_change_load()
+            show_popup_button = self.browser.find_element_by_class_name(
+                'editAddressButton')
             show_popup_button.click()
         except Exception as e:
             logger.error(e)
@@ -254,7 +291,7 @@ class GoogleExpressCheckoutBot(object):
 
         def send_address():
             address = self.browser.find_element_by_xpath(
-                '//input[@name="address"]')
+                '//input[@name="address"] | //input[@name="addressLine1"]')
             address.clear()
             address.send_keys(self.product_order.buyer_address)
 
@@ -273,7 +310,7 @@ class GoogleExpressCheckoutBot(object):
             if buyer_state_code:
                 buyer_state_code = buyer_state_code.upper()
 
-            xpath = '//md-option[@value="' + buyer_state_code + '"]'
+            xpath = '//md-option[@value="' + buyer_state_code + '"] | //md-option[@id="' + STATE_MAP[buyer_state_code] + '"]'
 
             def wait_state_popup_load():
                 excp_msg = 'Timed out waiting for state popup load'
@@ -294,7 +331,7 @@ class GoogleExpressCheckoutBot(object):
             postal_code.send_keys(self.product_order.buyer_postal_code)
 
         save_button_xpath = '//form[@name="addressForm"]/' \
-            'md-dialog-actions/button[@type="submit"]'
+            'md-dialog-actions/button[@type="submit"] | //md-dialog-actions//button[contains(@class, "mat-primary")]'
 
         try:
             wait_edit_address_popup_load()
@@ -312,7 +349,7 @@ class GoogleExpressCheckoutBot(object):
 
     def _select_first_from_address_list(self):
         xpath = '//md-list-item[contains(@class, "addressOption")][1]/' \
-            'div/gsx-address-content'
+            'div/gsx-address-content | //button[@aria-label="Close dialog"]'
 
         def wait_change_address_popup_load():
             excp_msg = 'Timed out waiting for change address popup load'
@@ -334,7 +371,9 @@ class GoogleExpressCheckoutBot(object):
 
     def _add_order(self):
         if self.product_order.product_url:
-            self.browser.get(self.product_order.product_url)
+            logger.warning(self.product_order.product_url)
+            time.sleep(5)
+            self.browser.get(str(self.product_order.product_url))
 
         goods_sold_out = self._check_goods_sold_out()
 
@@ -350,16 +389,16 @@ class GoogleExpressCheckoutBot(object):
 
     def _check_goods_sold_out(self):
         exc_msg = 'Timed out waiting for Sold out text load'
-
+        xpath = '//div[@class="soldOutText"] | //div[@class="availabilityNote"]'
         def wait_sold_out_entry():
             self._selenium_element_load_waiting(
-                By.CLASS_NAME, 'soldOutText',
+                By.XPATH, xpath,
                 success_msg='Sold out text loaded',
                 timeout_exception_msg=exc_msg)
 
         try:
             wait_sold_out_entry()
-            self.browser.find_element_by_class_name('soldOutText')
+            self.browser.find_element_by_xpath(xpath)
             self.product_order.status = STATE_SOLD_OUT
             self.product_order.save()
             return True
@@ -369,7 +408,7 @@ class GoogleExpressCheckoutBot(object):
 
     def _get_available_goods_count(self):
         xpath = '//div[contains(@class, "md-active")]/' \
-            'md-select-menu/md-content/md-option[last()]'
+            'md-select-menu/md-content/md-option[last()] | //md-option[last()]'
 
         def wait_count_popup_load():
             self._selenium_element_load_waiting(
@@ -378,17 +417,21 @@ class GoogleExpressCheckoutBot(object):
 
         try:
             count_field = self.browser.find_element_by_xpath(
-                '//md-select[contains(@ng-model, "quantity")]')
+                '//md-select[contains(@ng-model, "quantity")] |' \
+                '//md-select[contains(@class, "quantitySelect")]/div[@class="mat-select-trigger"]')
             count_field.click()
             wait_count_popup_load()
             goods_count = self.browser.find_element_by_xpath(xpath)
-            goods_count = goods_count.get_attribute("value")
-            logger.info('Available goods count:' + goods_count)
+            count = goods_count.get_attribute("value")
+            if not count:
+                goods_count = self.browser.find_element_by_xpath('//md-option[last()]/span')
+                count = goods_count.text
+            logger.info('Available goods count:' + count)
         except Exception as e:
             logger.error(e)
             return None
 
-        return goods_count
+        return count
 
     def _set_count_of_goods(self, available_count):
         if available_count and available_count.isdigit() and \
@@ -401,7 +444,7 @@ class GoogleExpressCheckoutBot(object):
             establish_count = 1
 
         def chose_count():
-            xpath = '//md-option[@value="' + str(establish_count) + '"]'
+            xpath = '//md-option[@value="' + str(establish_count) + '"] | //md-option/span[text()="' + str(establish_count) + '"]'
             count_option = self.browser.find_element_by_xpath(xpath)
             count_option.click()
 
@@ -413,16 +456,17 @@ class GoogleExpressCheckoutBot(object):
             logger.error(e)
 
     def _add_goods_to_cart(self):
+        xpath = '//button[contains(@class, "addItemButton")] | //button[contains(@class, "addToCartButton")]'
         def wait_add_to_cart_button_load():
             self._selenium_element_load_waiting(
-                By.CLASS_NAME, 'addItemButton',
+                By.XPATH, xpath,
                 success_msg='Add item button loaded',
                 timeout_exception_msg='Timed out waiting for Add item button')
 
         try:
             wait_add_to_cart_button_load()
-            add_item_button = self.browser.find_element_by_class_name(
-                'addItemButton')
+            add_item_button = self.browser.find_element_by_xpath(
+                xpath)
             add_item_button.click()
         except Exception as e:
             logger.error(e)
